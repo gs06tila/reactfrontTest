@@ -9,9 +9,12 @@ class RestaurantList extends Component {
         this.state = {restaurants: [] };
     }
 
+    componentDidMount() {
+        this.fetchRestaurants();
+    }
 
     fetchRestaurants = () => {
-        fetch((SERVER_URL + 'api/restaurants'))
+        fetch(SERVER_URL + 'api/restaurants')
             .then((response) => response.json())
             .then((responseData) => {
                 this.setState({
@@ -19,10 +22,6 @@ class RestaurantList extends Component {
                 });
             })
             .catch(err => console.error(err));
-    }
-
-    componentDidMount() {
-        this.fetchRestaurants();
     }
 
     onDelClick = (link) => {
@@ -49,15 +48,12 @@ class RestaurantList extends Component {
             Header: 'active',
             accessor: 'active'
         }, {
-            Header: 'user',
-            accessor: 'user'
-        },{
-           id: 'delbutton',
-           sortable: false,
-           filterable: false,
-           width: 100,
-           accessor: '_Links.self.href',
-           Cell: ({value}) => (<button onClick={ () => {this.onDelClick(value)}}>Delete</button>)
+            id: 'delbutton',
+            sortable: false,
+            filterable: false,
+            width: 100,
+            accessor: '_links.self.href',
+            Cell: ({value}) => (<button onClick={()=>{this.onDelClick(value)}}>Delete</button>)
         }]
 
         return (
