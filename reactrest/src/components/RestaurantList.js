@@ -1,7 +1,13 @@
 import React, { Component } from 'react';
 import {SERVER_URL} from '../constants.js';
 import ReactTable from "react-table";
+import { ToastContainer, toast } from 'react-toastify';
+import {confirmAlert} from "react-confirm-alert";
+import  'react-confirm-alert/src/react-confirm-alert.css';
+import 'react-toastify/dist/ReactToastify.css';
 import 'react-table/react-table.css';
+import AddRestaurant from './AddRestaurant.js';
+import EditRestaurant from './EditRestaurant.js';
 
 class RestaurantList extends Component {
     constructor(props){
@@ -22,12 +28,72 @@ class RestaurantList extends Component {
                 });
             })
             .catch(err => console.error(err));
-    }
+    };
 
     onDelClick = (link) => {
-        fetch(link, {method: 'DELETE'})
+        if (window.confirm('Are you sure to delete?')) {
+            fetch(link, {method: 'DELETE'})
+                .then(res => {
+                    toast.success("Restaurante deleted", {
+                        position: toast.POSITION.BOTTOM_LEFT
+                    });
+                    this.fetchRestaurants();
+                })
+                .catch(err => {
+                    toast.error("Something went wrong", {
+                        position: toast.POSITION.BOTTOM_LEFT
+                    });
+                    console.log(err)
+                })
+        }
+    };
+
+    addRestaurant(restaurant){
+        fetch(SERVER_URL + 'api/restaurants',
+            { method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(restaurant)
+            })
             .then(res => this.fetchRestaurants())
-            .catch(err => console.error(err))
+            .catch(err => console.log(err))
+    };
+
+    confirmDelete = (link) => {
+        confirmAlert({
+            message: 'Are you sure to delete?',
+            buttons: [
+                {
+                    label: 'Yes',
+                    onClick: () => this.onDelClick(link)
+                },
+                {
+                    label: 'No',
+                }
+            ]
+        })
+    };
+
+    updateRestaurant(restaurant, link) {
+        fetch(link,
+            { method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(restaurant)
+            })
+            .then(res => {
+                toast.success("Changes saved", {
+                    position: toast.POSITION.BOTTOM_LEFT
+                });
+                this.fetchRestaurants();
+            })
+            .catch(err =>
+                toast.error("Error when saving", {
+                    position: toast.POSITION.BOTTOM_LEFT
+                })
+            )
     }
 
 
@@ -48,19 +114,28 @@ class RestaurantList extends Component {
             Header: 'active',
             accessor: 'active'
         }, {
+            sortable: false,
+            filterable: false,
+            width: 100,
+            accessor: '_links.self.href',
+            Cell: ({value, row}) => (<EditRestaurant restaurant={row} link={value}
+                                              updateRestaurant={this.updateRestaurant} fetchRestaurants={this.fetchRestaurants} />),
+        }, {
             id: 'delbutton',
             sortable: false,
             filterable: false,
             width: 100,
             accessor: '_links.self.href',
-            Cell: ({value}) => (<button onClick={()=>{this.onDelClick(value)}}>Delete</button>)
-        }]
+            Cell: ({value}) => (<button onClick={()=>{this.confirmDelete(value)}}>Delete</button>)
+        }];
 
         return (
             <div className="App">
+                <AddRestaurant addRestaurant={this.addRestaurant} fetchRestaurants={this.fetchRestaurants}/>
                 <ReactTable data={this.state.restaurants} columns={columns}
-                            filterable={true}/>
-            </div>
+                            filterable={true} pageSixe={10}/>
+                <ToastContainer autoClose={1500} />
+    </div>
         );
     }
 }
